@@ -1,0 +1,17 @@
+{
+  "name": "microflow",
+  "version": "1.0.0",
+  "description": "CI/CD industrialisation as a microservice architecture for the MicroFlow project.",
+  "scripts": {
+    "install": "cd Client && npm i && cd ../Server && npm i && cd ../Tests && npm i",
+    "dev-front": "cd Client && ng serve",
+    "dev-back": "cd Server && npm run dev",
+    "dev": "concurrently --kill-others --kill-others-on-fail -c red,blue --names Server,Client \"npm run dev-back\" \"npm run dev-front\"",
+    "test-only": "cd Tests && npm run test",
+    "test": "concurrently --success first --kill-others --kill-others-on-fail --hide 0 -c green --names App,Tests \"npm run dev\" \"npm run test-only\"",
+    "build": "echo TODO && exit 1"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}

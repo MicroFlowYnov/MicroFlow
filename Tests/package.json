@@ -1,0 +1,9 @@
+{
+  "name": "tests",
+  "scripts": {
+    "test": "npx cypress run"
+  },
+  "devDependencies": {
+    "cypress": "^13.17.0"
+  }
+}
