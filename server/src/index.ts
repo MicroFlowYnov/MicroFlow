@@ -58,7 +58,7 @@ app.use("/api", routes);
 // Launching API
 const port = 8000;
 app.listen(port, () => {
-    console.log(`▶ Server running at http://localhost:${port}/.`);
+    console.log(`▶ Server running at http://localhost:${port}.`);
 }).on('error', (error) => {
     throw new Error(error.message);
 });

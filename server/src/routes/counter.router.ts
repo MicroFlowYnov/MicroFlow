@@ -1,5 +1,4 @@
 import { Request, Response, Router } from 'express';
-import { dbConnection } from '~~/src';
 
 const counterRouter = Router();
 
@@ -13,9 +12,9 @@ counterRouter.get(
             // TODO
             // const result = dbConnection.query(`SELECT count FROM Counter`);
             // console.log(result);
-            res.status(200).send('Ok');
+            res.status(200).send({counter: 0});
         } catch (e) {
-            res.status(500).send({ error: e?.toString() });
+            res.status(500).send({error: e?.toString()});
         }
     }
 );
@@ -30,9 +29,9 @@ counterRouter.put(
             - New counter value >= 0
             - New counter value <= 10^15
              */
-            res.status(200).send('Ok');
+            res.status(200).send({test: 'ok'});
         } catch (e) {
-            res.status(500).send({ error: e?.toString() });
+            res.status(500).send({error: e?.toString()});
         }
     }
 );

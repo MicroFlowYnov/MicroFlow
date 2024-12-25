@@ -39,7 +39,7 @@ export class AppComponent implements OnInit {
    * @param value The value to add to the counter.
    */
   protected updateCounter(value: number) {
-    this.counter = Math.min(Math.max(0, this.counter + value), Math.pow(10, 15)); // TODO: updating the counter in the database (send request on button release!)
+    this.counter = Math.min(Math.max(this.counter + value, 0), Math.pow(10, 15)); // TODO: updating the counter in the database (send request on button release!)
     this.getCounter();
   }
 
