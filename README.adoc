@@ -1,0 +1,79 @@
+= MicroFlow
+
+CI/CD industrialisation as a microservice architecture for the MicroFlow project.
+
+*_What has been done yet?_*
+
+== MicroFlow project
+
+* Using GitHub
+* GitHub organization
+
+=== Frontend
+
+* Using Angular web app
+* Features:
+** _Observe_ counter value
+** Increase counter
+** Decrease counter
+
+== Collaboration
+
+* Discord server (channels, permissions, help forum, etc)
+* Channel to see GitHub Actions notifications
+
+== GitHub Actions pipeline
+
+* Code reviews are managed and triggered when creating pull requests from `develop` to `main`
+* YML file on `main` pull request to (cannot merge if not passing):
+. Ensure that the pull request is made from `develop`
+. Assert tests
+* YML file on `main` push to:
+
+ (code cannot be pushed directly into the branch + tests are asserted when creating a pull request from `develop`)
+
+. Build the app
+. Build a Docker image and push it to Docker Hub
+. Deploy the app on a staging environment
+. Draft a new release (to be manually completed and validated)
+* Using repository variables and secrets
+** SSH connection key:
+*** Created a new user on staging server
+*** Configured user rights (only allowed to deploy in the `/var/www/html/MicroFlow` directory) and connection using SSH (generated RSA keypair)
+*** Referenced the generated private key in repository secrets
+* Sending notifications to the Discord server when:
+** Build fails
+** Deployment fails
+** Deployment succeed with creation of a new draft release (to manually review and publish)
+
+== Docker
+
+* Dockerfile to create an image supporting the deployment of the built application on a local Nginx server
+* Docker image built and push to Docker Hub by the deploy-release pipeline (YML file)
+
+== Quality and good practices
+
+* Implemented and running tests on frontend and backend using Cypress:
+** Is the application available?
+** Can the counter be increased to 10^15 or bellow?
+** Can the counter be decreased to 0 or above?
+* YML file on `main` pull request to:
+** Check that only `develop` can be merged into `main`
+** Assert tests before allowing to merge (Discord notification on failure)
+* YML file on `develop` push to:
+** Assert tests (Discord notification on failure)
+* ESLint + Husky:
+** Linting code before each commit (in the console)
+** ESLint setup only to prevent code errors, but could be configurer to handle specific "rules"
+** Cancel commit if errors found within the code
+** Ensuring a minimale code quality (no error in the code)
+
+== Branch and release management
+
+* Using a mix between GitHub Flow and GitFlow:
+** `main` = main branch equivalent to `master`, only full, clean and functional code for releases
+** `develop` only clean and functional code, only branch that can be merged with `main` (defined within a YML workflow file)
+** Other branches, can be named `feature/...`, `hotfix/...` for better understanding
+* Using repository rules to protect `main`: require code reviews on pull requests
+* Defined organization teams:
+** 'Developers' = able to push and review code

@@ -1,0 +1,136 @@
+name: Full application build, staging deployment and (draft) release
+
+on:
+  push:
+    branches: [ main ]
+
+env:
+  GITHUB_REPO_URL: ${{ vars.REPO_URL }}
+  DEPLOY_BASE_URL: ${{ vars.DEPLOY_BASE_URL }}
+  SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+  REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
+  REMOTE_USER: ${{ secrets.REMOTE_USER }}
+  SERVER_DEPLOY_PATH: ${{ secrets.SERVER_DEPLOY_PATH }}
+  DOCKER_USER: ${{ secrets.DOCKER_USER }}
+  DOCKER_REPO: ${{ secrets.DOCKER_REPO }}
+  DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+  DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: ▶ Getting release version 🏷️
+        run: echo "VERSION=v$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+        id: version
+      - name: ▶ Building the application 🔨
+        run: |
+          npm i
+          npm run build -- --base-href=${{ env.DEPLOY_BASE_URL }}
+      - name: ▶ Archiving the build 📁
+        uses: actions/upload-artifact@master
+        with:
+          name: build
+          path: ./dist/browser/
+          include-hidden-files: true
+      - name: ▶ Building and pushing the project Docker image to Docker Hub 🐋
+        run: |
+          docker build -t ${{ env.DOCKER_USER }}/${{ env.DOCKER_REPO }}:${{ github.sha }} .
+          docker tag ${{ env.DOCKER_USER }}/${{ env.DOCKER_REPO }}:${{ github.sha }} ${{ env.DOCKER_USER }}/${{ env.DOCKER_REPO }}:latest
+          echo "${{ env.DOCKER_PASSWORD }}" | docker login -u "${{ env.DOCKER_USER }}" --password-stdin
+          docker push ${{ env.DOCKER_USER }}/${{ env.DOCKER_REPO }}:${{ github.sha }}
+          docker push ${{ env.DOCKER_USER }}/${{ env.DOCKER_REPO }}:latest
+      - name: ▶ Notifying build failure in Discord
+        if: failure()
+        run: |
+          curl -g -H "content-type: application/json" -X POST -d '{
+            "content": "New GitHub Actions notification:",
+            "tts": false,
+            "embeds": [
+              {
+                "id": 956815395,
+                "description": "The latest version of MicroFlow (${{ needs.build.outputs.VERSION }}) couldn'\''t be automatically built.\n\n[>> Check the corresponding GitHub Actions workflow <<](${{ env.GITHUB_REPO_URL }}/actions/runs/${{ github.run_id }})",
+                "fields": [ ],
+                "title": "Failed building MicroFlow ${{ needs.build.outputs.VERSION }} ❌",
+                "color": 14495300
+              }
+            ],
+            "components": [ ],
+            "actions": { }
+          }' ${{ env.DISCORD_WEBHOOK_URL }}
+    outputs:
+      VERSION: ${{ steps.version.outputs.VERSION }}
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: ▶ Downloading the build artifact 📥
+        uses: actions/download-artifact@master
+        with:
+          name: build
+          path: ./dist
+      - name: ▶ Deploying the build using SSH 📤
+        uses: easingthemes/ssh-deploy@main
+        with:
+          SSH_PRIVATE_KEY: ${{ env.SSH_PRIVATE_KEY }}
+          REMOTE_HOST: ${{ env.REMOTE_HOST }}
+          REMOTE_USER: ${{ env.REMOTE_USER }}
+          SOURCE: dist/
+          TARGET: ${{ env.SERVER_DEPLOY_PATH }}
+          SCRIPT_BEFORE: rm -fr ${{ env.SERVER_DEPLOY_PATH }}/* ${{ env.SERVER_DEPLOY_PATH }}/\.[^\.]*
+      - name: ▶ Notifying deployment failure in Discord
+        if: failure()
+        run: |
+          curl -g -H "content-type: application/json" -X POST -d '{
+            "content": "New GitHub Actions notification:",
+            "tts": false,
+            "embeds": [
+              {
+                "id": 956815395,
+                "description": "The latest version of MicroFlow (${{ needs.build.outputs.VERSION }}) couldn'\''t be automatically deployed.\n\n[>> Check the corresponding GitHub Actions workflow <<](${{ env.GITHUB_REPO_URL }}/actions/runs/${{ github.run_id }})",
+                "fields": [ ],
+                "title": "Failed deploying MicroFlow ${{ needs.build.outputs.VERSION }} ❌",
+                "color": 14495300
+              }
+            ],
+            "components": [ ],
+            "actions": { }
+          }' ${{ env.DISCORD_WEBHOOK_URL }}
+
+  draft-release:
+    needs:
+      - build
+      - deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: ▶ Drafting a new release ✅
+        uses: comnoco/create-release-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Provided by GitHub Actions
+        with:
+          tag_name: ${{ needs.build.outputs.VERSION }}
+          release_name: ${{ needs.build.outputs.VERSION }}
+          body: |
+            *Write release body.*
+          draft: true
+          prerelease: false
+      - name: ▶ Notifying release success on Discord
+        run: |
+          curl -g -H "content-type: application/json" -X POST -d '{
+            "content": "New GitHub Actions notification:",
+            "tts": false,
+            "embeds": [
+              {
+                "id": 956815395,
+                "description": "The latest version of MicroFlow (${{ needs.build.outputs.VERSION }}) has been successfully deployed at ${{ env.DEPLOY_BASE_URL }}.\n\nA [new release](${{ env.GITHUB_REPO_URL }}/releases) has also been created to review and publish.\n\n[>> Check the corresponding GitHub Actions workflow <<](${{ env.GITHUB_REPO_URL }}/actions/runs/${{ github.run_id }})",
+                "fields": [ ],
+                "title": "Successfully deployed MicroFlow ${{ needs.build.outputs.VERSION }} ✅",
+                "color": 7844437
+              }
+            ],
+            "components": [ ],
+            "actions": { }
+          }' ${{ env.DISCORD_WEBHOOK_URL }}
