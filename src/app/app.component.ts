@@ -30,7 +30,7 @@ export class AppComponent {
    * @param value The value to add to the counter.
    */
   protected updateCounter(value: number) {
-    this.counter = value; // TODO: control and update the counter value
+    this.counter = Math.min(Math.max(this.counter + value, 0), Math.pow(10, 15));
   }
 
   //endregion
