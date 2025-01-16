@@ -1,1 +1,10 @@
-// TODO
+@use "bootstrap-icons";
+
+* {
+  margin: 0;
+  font-family: Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif;
+}
+
+svg {
+  overflow: visible;
+}

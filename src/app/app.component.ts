@@ -12,6 +12,27 @@ import { FormsModule } from '@angular/forms';
 })
 export class AppComponent {
 
-  // TODO
+  //region fields
+
+  /**
+   * The counter.
+   * * Can't be less than 0
+   * * Can't be larger than 10^15
+   */
+  protected counter = 0;
+
+  //endregion
+
+  //region methods
+
+  /**
+   * Updating the counter value, so it can't neither be less than 0 nor larger than 10^15.
+   * @param value The value to add to the counter.
+   */
+  protected updateCounter(value: number) {
+    this.counter = value; // TODO: control and update the counter value
+  }
+
+  //endregion
 
 }
