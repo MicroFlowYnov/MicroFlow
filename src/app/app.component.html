@@ -1,9 +1,9 @@
 <main>
 
   <div class="counter-container">
-    <button class="counter-button">-</button>
+    <button (click)="updateCounter(-1)" class="counter-button">-</button>
     <span class="counter-display">{{ counter }}</span>
-    <button class="counter-button">+</button>
+    <button (click)="updateCounter(1)" class="counter-button">+</button>
   </div>
 
 </main>
