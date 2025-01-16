@@ -1,0 +1,53 @@
+name: Checking PR from 'develop' to 'main'
+
+on: pull_request
+
+env:
+  GITHUB_REPO_URL: ${{ vars.REPO_URL }}
+  DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+
+jobs:
+
+  check_branches:
+    runs-on: ubuntu-latest
+    steps:
+      - name: ▶ Checking branches 🛂
+        if: github.base_ref == 'main' && github.head_ref != 'develop'
+        run: |
+          echo "Only 'develop' can be merged into 'main'."
+          exit 1
+
+  test:
+    needs: check_branches
+    runs-on: ubuntu-latest
+    if: github.base_ref == 'main'
+    steps:
+      - uses: actions/checkout@v4
+      - name: ▶ Getting release version 🏷️
+        run: echo "VERSION=v$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+        id: version
+      - name: ▶ Testing the project ⚠️
+        uses: cypress-io/github-action@v4
+        with:
+          start: npm run dev
+          wait-on: http://localhost:4200
+          browser: edge
+          spec: cypress/e2e/frontend.cy.js
+      - name: ▶ Notifying PR failure on Discord
+        if: failure()
+        run: |
+          curl -g -H "content-type: application/json" -X POST -d '{
+            "content": "New GitHub Actions notification:",
+            "tts": false,
+            "embeds": [
+              {
+                "id": 956815395,
+                "description": "Tests failed on `develop`, so the [following pull request to `main`](${{ env.GITHUB_REPO_URL }}/pull/${{ github.event.number }}) couldn'\''t be completed.\n\n[>> Check the corresponding GitHub Actions workflow <<](${{ env.GITHUB_REPO_URL }}/actions/runs/${{ github.run_id }})",
+                "fields": [ ],
+                "title": "Pull request failed (MicroFlow ${{ steps.version.outputs.VERSION }}) ❌",
+                "color": 14495300
+              }
+            ],
+            "components": [ ],
+            "actions": { }
+          }' ${{ env.DISCORD_WEBHOOK_URL }}

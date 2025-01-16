@@ -1,0 +1,41 @@
+name: Asserting tests on 'develop'
+
+on:
+  push:
+    branches: [ develop ]
+
+env:
+  GITHUB_REPO_URL: ${{ vars.REPO_URL }}
+  DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+
+jobs:
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: ▶ Testing the project ⚠️
+        uses: cypress-io/github-action@v4
+        with:
+          start: npm run dev
+          wait-on: http://localhost:4200
+          browser: edge
+          spec: cypress/e2e/frontend.cy.js
+      - name: ▶ Notifying test failure on Discord
+        if: failure()
+        run: |
+          curl -g -H "content-type: application/json" -X POST -d '{
+            "content": "New GitHub Actions notification:",
+            "tts": false,
+            "embeds": [
+              {
+                "id": 956815395,
+                "description": "Tests failed on `develop` on last pushed code.\n\n[>> Check the corresponding GitHub Actions workflow <<](${{ env.GITHUB_REPO_URL }}/actions/runs/${{ github.run_id }})",
+                "fields": [ ],
+                "title": "Tests failed on `develop` ⚠️",
+                "color": 16763981
+              }
+            ],
+            "components": [ ],
+            "actions": { }
+          }' ${{ env.DISCORD_WEBHOOK_URL }}
