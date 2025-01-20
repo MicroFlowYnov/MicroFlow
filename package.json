@@ -1,13 +1,13 @@
 {
   "name": "microflow",
-  "version": "1.0.0",
-  "description": "CI/CD industrialisation as a microservice architecture for the MicroFlow project.",
+  "version": "1.0.1",
+  "description": "CI/CD industrialization as a microservice architecture for the MicroFlow project.",
   "scripts": {
+    "install": "husky",
     "dev": "ng serve",
     "build": "ng build",
     "test": "npx cypress run --spec 'cypress/e2e/frontend.cy.js'",
-    "lint": "npx eslint src",
-    "prepare": "husky"
+    "lint": "npx eslint src"
   },
   "private": true,
   "dependencies": {
